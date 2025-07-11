@@ -47,7 +47,7 @@ body {
     padding-block: 60px;
 }
 
-img{
+img {
     max-width: 100%;
     height: auto;
 }
@@ -58,7 +58,8 @@ img{
     font-family: inherit
 }
 
-a, button {
+a,
+button {
     font-family: inherit;
     display: inline-block;
     text-decoration: none;
@@ -88,13 +89,10 @@ a, button {
     display: block;
 
     .wrapper {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
         padding: 1rem;
 
-        &>div{
-            flex: 0 1 calc(33.333% - 1rem);
+        .item {
+            margin: 1rem;
             box-shadow: var(--shadow);
             border-radius: var(--border-radius);
             background-color: white;
@@ -103,6 +101,20 @@ a, button {
             &:hover {
                 transform: translateY(-5px);
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .img-wrapper {
+                max-height: 250px;
+                overflow: hidden;
+                border-radius: var(--border-radius) var(--border-radius) 0 0;
+                position: relative;
+            }
+
+            img {
+                display: block;
+                width: 100%;
+                object-fit: cover;
+                height: 100%;
             }
         }
 
@@ -139,6 +151,104 @@ a, button {
                     color: var(--background-color);
                     background-color: var(--primary-color);
                 }
+            }
+        }
+    }
+}
+
+/* Where the style of the carrousel comes in */
+.carrousel__item-root {
+    position: relative;
+
+    .carrousel__items-container {
+        position: relative;
+        display: flex;
+        transform: translate3d(0, 0, 0);
+        transition: transform var(--transition-speed);
+
+        /* to keep the container height*/
+        &::before {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        &.carrousel__has-left-btn-hidden ~ .carrousel__btn-container:has(.carrousel__prev) {
+            .carrousel__prev {
+                opacity: 0;
+                pointer-events: none;
+                visibility: hidden;
+            }
+        }
+        &.carrousel__has-right-btn-hidden ~ .carrousel__btn-container:has(.carrousel__next) {
+            .carrousel__next {
+                opacity: 0;
+                pointer-events: none;
+                visibility: hidden;
+            }
+        }
+    }
+
+    .carrousel__item {
+        float: left;
+    }
+
+    .carrousel__btn-container {
+        max-width: 100%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+
+        .carrousel__next,
+        .carrousel__prev {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--primary-color);
+            border: 1.5px solid var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            transition: background-color var(--transition-speed), opacity var(--transition-speed), visibility var(--transition-speed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            visibility: visible;
+
+            &::after {
+                content: "";
+                display: block;
+                width: 12px;
+                height: 12px;
+                background-image: url('../img/right.svg');
+                background-repeat: no-repeat;
+                background-size: 100%;
+                font-size: 0.5rem;
+                color: var(--background-color);
+                display: inline-block;
+                transition: color var(--transition-speed);
+            }
+
+            &:hover {
+                background-color: darken(var(--primary-color), 50%);
+
+                &::after {
+                    color: var(--primary-color);
+                }
+            }
+        }
+
+        .carrousel__prev {
+            right: auto;
+            left: 0;
+
+            &::after{
+                content: "";
+                background-image: url('../img/left.svg');
             }
         }
     }
