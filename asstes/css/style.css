@@ -252,4 +252,35 @@ button {
             }
         }
     }
+
+    .carrousel__pagination {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1rem;
+
+        .carrousel__pagination-item {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+            border: 1px solid var(--secondary-color);
+            box-shadow: 0 5px 5px rgba(0, 0, 0, 0.1);
+
+            &.carrousel__pagination-item--active {
+                background-color: var(--primary-color);
+                border-color: var(--primary-color);
+                scale: 1.2;
+            }
+
+            &:hover {
+                scale: 1.2;
+                background-color: darken(var(--secondary-color), 20%);
+            }
+        }
+    }
 }

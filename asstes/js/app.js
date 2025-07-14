@@ -1,5 +1,6 @@
 class Carrousel {
     #children;
+    #itemOffset;
 
     /**
      * 
@@ -9,13 +10,16 @@ class Carrousel {
      * @param {Object} [options.slidesVisible=1] : Number of slides visible at once. 
      * @param {boolean} [options.loop=false] : Indicates whether the carrousel should loop back to the start when reaching the end. 
      * @param {boolean} [options.isMobile=false] : Indicates whether the carrousel is being viewed on a mobile device.
+     * @param {boolean} [options.pagination=false] : Indicates whether pagination controls should be displayed.
+     * @param {boolean} [options.infinite = false] : Indicates if the infinite should be enabled or not.
      */
     constructor(element, options = {}) {
         this.element = element;
         this.options = Object.assign({}, {
             slidesToScroll: 1,
             slidesVisible: 1,
-            loop: false
+            loop: false,
+            pagination: false,
         }, options);
         this.#children = [...this.element.children];
         // or
@@ -23,6 +27,10 @@ class Carrousel {
 
         this.currentItem = 0;
         this.isMobile = false;
+        this.infinite = false;
+        this.#itemOffset = 0;
+
+
 
 
         // DOM manipulation
@@ -36,12 +44,31 @@ class Carrousel {
         this.items = this.#children.map((child) => {
             let item = this.createElementWithClass('div', 'carrousel__item');
             item.appendChild(child);
-            this.carrouselContainer.appendChild(item);
+            // this.carrouselContainer.appendChild(item);
 
             return item;
         });
+        if (this.options.infinite) {
+            this.#itemOffset = this.options.slidesVisible * 2 - 1;
+            if (this.#itemOffset > this.#children.length) {
+                console.error('The number of items in the carrousel is less than the number of slides visible. Infinite mode may not work as expected.');
+            }
+
+            this.items = [
+                ...this.items.slice(this.items.length - this.#itemOffset).map(item => item.cloneNode(true)),
+                ...this.items,
+                ...this.items.slice(0, this.#itemOffset).map(item => item.cloneNode(true)),
+            ];
+
+            // console.log(this.items);
+            // this.currentItem = this.#itemOffset;
+            this.gotoItem(this.#itemOffset, false);
+        }
+        this.items.forEach(item => this.carrouselContainer.appendChild(item));
+        // call needed funtion on while the file is being loaded
         this.setStyle();
         this.createNavigation();
+        this.options.pagination ? this.createPagination() : null;
         this.onWindowResize();
 
         // Event
@@ -54,6 +81,17 @@ class Carrousel {
                 this.prev();
             }
         });
+
+        if (this.options.infinite) {
+            this.carrouselContainer.addEventListener('transitionend', () => {
+                this.reasignInfinite();
+                // debugger
+            });
+        }
+
+        if (this.options.infinite && this.options.loop) {
+            throw new Error('Infinite mode and loop mode cannot be used together. Please choose one.');
+        }
     }
 
     /**
@@ -80,8 +118,9 @@ class Carrousel {
     /**
      * 
      * @param {number} index : The index of the item to navigate to in the carrousel.
+     * @param {boolean} isAnimate : indicates if we want to animation while navigating
      */
-    gotoItem(index) {
+    gotoItem(index, isAnimate = true) {
         // Ensure the index is within bounds
         if (index < 0) {
             // index = this.options.loop ? this.items.length - this.options.slidesVisible : 0;
@@ -104,11 +143,37 @@ class Carrousel {
             this.carrouselContainer.classList.remove('carrousel__has-left-btn-hidden');
             this.carrouselContainer.classList.remove('carrousel__has-right-btn-hidden');
         }
+
         let translateX;
         translateX = (index * -100) / this.items.length;
-        this.carrouselContainer.style.transform = `translate3d(${translateX}%, 0, 0)`;
-        this.currentItem = index;
 
+        if (isAnimate === false) {
+            this.carrouselContainer.style.transition = 'none';
+            // debugger
+        }
+
+        this.carrouselContainer.style.transform = `translate3d(${translateX}%, 0, 0)`;
+
+        this.carrouselContainer.offsetHeight; //force the browser repaint
+        // console.log(this.carrouselContainer.offsetHeight);
+
+
+        if (isAnimate === false) {
+            this.carrouselContainer.style.transition = '';
+        }
+
+        this.currentItem = index;
+    }
+
+    /**
+     * Move the carrouselContainer to make it looks like an infinite move 
+     */
+    reasignInfinite() {
+        if (this.currentItem <= this.options.slidesToScroll) {
+            this.gotoItem(this.currentItem + (this.items.length - (2 * this.#itemOffset)), false)
+        } else if (this.currentItem >= this.items.length - this.#itemOffset) {
+            this.gotoItem(this.currentItem - (this.items.length - (2 * this.#itemOffset)), false)
+        }
     }
 
     /**
@@ -124,6 +189,9 @@ class Carrousel {
         });
     }
 
+    /**
+     * create navigation and bind events to next and previous buttons
+     */
     createNavigation() {
         let nextButton = this.createElementWithClass('button', 'carrousel__next');
         this.element.appendChild(nextButton);
@@ -151,6 +219,30 @@ class Carrousel {
     }
 
     /**
+     * Creates pagination controls for the carrousel, allowing users to navigate to specific items.
+     */
+    createPagination() {
+        let paginationContainer = this.createElementWithClass('div', 'carrousel__pagination');
+        let paginationButton = [];
+        this.itemRoot.appendChild(paginationContainer);
+        for (let i = 0; i < (this.items.length - (2 * this.#itemOffset)); i += this.options.slidesToScroll) {
+            paginationButton[i] = this.createElementWithClass('button', 'carrousel__pagination-item');
+            paginationButton[i].setAttribute('data-index', i);
+            paginationButton[i].addEventListener('click', (e) => {
+                this.gotoItem(parseInt((e.target.getAttribute('data-index'))) + this.#itemOffset);
+                // debugger
+                // Remove active class from all pagination items
+                paginationButton.forEach((btn) => {
+                    btn.classList.remove('carrousel__pagination-item--active');
+                });
+                // Add active class to the clicked pagination item
+                e.target.classList.add('carrousel__pagination-item--active');
+            });
+            paginationContainer.appendChild(paginationButton[i]);
+        }
+    }
+
+    /**
      * @returns {number} The number of slides to scroll at once, adjusted for mobile view if applicable.
      */
     get slidesToScroll() {
@@ -173,16 +265,26 @@ class Carrousel {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+let contentHasBeenLoaded = function () {
     new Carrousel(document.querySelector('#carrousel'), {
         slidesToScroll: 2,
         slidesVisible: 2,
-        loop: true
+        loop: true,
+        pagination: true,
     });
 
     new Carrousel(document.querySelector('#carrousel2'), {
-        slidesToScroll: 1,
-        slidesVisible: 1,
-        loop: false
+        slidesToScroll: 2,
+        slidesVisible: 2,
+        loop: false,
+        pagination: true,
+        infinite: true
     });
-});
+}
+
+// prevent the script from running before the DOM is fully loaded because of the asynchronous nature of JavaScript
+if (document.readyState !== 'loading') {
+    contentHasBeenLoaded();
+}
+
+document.addEventListener('DOMContentLoaded', contentHasBeenLoaded);
