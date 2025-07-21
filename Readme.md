@@ -1,6 +1,7 @@
 # Carousel Transform
 
 A responsive, touch-enabled carousel component built with HTML, CSS, and JavaScript. This project demonstrates a flexible carousel implementation supporting navigation, pagination, infinite scrolling, and touch/mouse drag gestures.
+Link to the project : [easysnap](https://willem-aw.github.io/carouselTransform/)
 
 ## Features
 
