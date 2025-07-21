@@ -1,3 +1,110 @@
+/**
+ * CarrouselTouchManager class is responsible for managing touch events on the carrousel.
+ * It handles touch start, move, and end events to enable swipe functionality on touch devices.
+ */
+class CarrouselTouchManager {
+
+    /**
+     * 
+     * @param {Carrousel} carrousel 
+     */
+    constructor(carrousel) {
+        /*
+        this.startX = 0;
+        this.currentX = 0;
+        this.isDragging = false;
+
+        this.init(); */
+        this.carrousel = carrousel;
+
+        // prevent some default behaviors like text selection and image dragging
+        carrousel.carrouselContainer.addEventListener('dragstart', (event) => {
+            event.preventDefault(); // Prevent default drag behavior
+        });
+        carrousel.carrouselContainer.addEventListener('touchstart', (event) => { this.onTouchStart(event) });
+        carrousel.carrouselContainer.addEventListener('mousedown', (event) => { this.onTouchStart(event) });
+
+        // window.addEventListener('touchmove', this.drag.bind(this));
+        // window.addEventListener('mousemove', this.drag.bind(this));
+        window.addEventListener('touchmove', (e) => { this.drag(e) });
+        window.addEventListener('mousemove', (e) => { this.drag(e) });
+
+
+        window.addEventListener('touchend', (e) => { this.endDrag(e) });
+        window.addEventListener('mouseup', (e) => { this.endDrag(e) });
+        window.addEventListener('touchcancel', (e) => { this.endDrag(e) });
+    }
+
+    /**
+     * 
+     * @param {MouseEvent | TouchEvent} event 
+     * Handles the touch move event to update the carrousel's position based on the swipe gesture.
+     */
+    onTouchStart(event) {
+        //e.preventDefault(); // Prevent default touch behavior (like scrolling)
+        if (event.touches) {
+            if (e.touches.length > 1) {
+                return; // Ignore multi-touch events
+            } else {
+                event = event.touches[0]; // Use the first touch point
+            }
+        }
+        this.origin = { x: event.screenX, y: event.screenY }; //to have the start point of the touch mobile event and mouse event
+        this.carrousel.disableTransition(); // Disable transition for smooth dragging
+        // console.log('Touch start:', this.origin.x);
+        this.carrouselWidth = this.carrousel.itemContainerWidth; // Get the width of the carrousel container
+    }
+
+    /**
+     * move the carrousel container based on the touch move event
+     * @param {MouseEvent | TouchEvent} event
+     */
+    drag(e) {
+        if (this.origin) {
+            this.carrousel.carrouselContainer.style.cursor = 'grabbing'; // Change cursor to indicate dragging
+            let point = e.touches ? e.touches[0] : e; // Use the first touch point for touch events
+            let translate = { x: point.screenX - this.origin.x, y: point.screenY - this.origin.y };
+
+            // prevent the vertical scrolling on mobile devices
+            if(e.touches && Math.abs(translate.x) > Math.abs(translate.y)){
+                e.preventDefault(); 
+                e.stopPropagation();
+            }else if(e.touches){
+                return;
+            }
+
+            let translateBase = (this.carrousel.currentItem * -100) / this.carrousel.items.length; // Calculate the base translation based on the current item
+            this.lastTranslatePoint = translate; // Store the last translation point for reference
+            this.carrousel.translate(translateBase + 100 * translate.x / this.carrouselWidth); // Set initial position
+        }
+    }
+
+    /**
+     * Handles the end of the drag event, determining whether to snap to the next or previous item based on the swipe distance.
+     * @param {*} e 
+     */
+    endDrag(e) {
+        if (this.origin && this.lastTranslatePoint) {
+            this.carrousel.enableTransition(); // Re-enable transition after dragging
+
+            if (Math.abs(this.lastTranslatePoint.x / this.carrousel.carrouselWidth) > 0.2) {
+                // If the swipe distance is greater than 20% of the carrousel width, navigate to the next or previous item
+                if (this.lastTranslatePoint.x > 0) {
+                    this.carrousel.prev(); // Swipe right, go to previous item
+                } else {
+                    this.carrousel.next(); // Swipe left, go to next item
+                }
+            } else {
+                // If the swipe distance is less than 20% of the carrousel width, snap back to the current item
+                this.carrousel.gotoItem(this.carrousel.currentItem, false); // Snap back to the current item without animation
+            }
+        }
+        this.origin = null; // Reset the origin point
+        this.carrousel.carrouselContainer.style.cursor = 'initial'; // Reset cursor style
+    }
+}
+
+
 class Carrousel {
     #children;
     #itemOffset;
@@ -92,6 +199,8 @@ class Carrousel {
         if (this.options.infinite && this.options.loop) {
             throw new Error('Infinite mode and loop mode cannot be used together. Please choose one.');
         }
+
+        new CarrouselTouchManager(this);
     }
 
     /**
@@ -113,6 +222,21 @@ class Carrousel {
 
     prev() {
         this.gotoItem(this.currentItem - this.slidesToScroll);
+    }
+
+    disableTransition() {
+        this.carrouselContainer.style.transition = 'none';
+    }
+
+    enableTransition() {
+        this.carrouselContainer.style.transition = '';
+    }
+
+    translate(percentage) {
+        // this.carrouselContainer.style.transform = `translate3d(${percentage}%, 0, 0)`;
+        this.carrouselContainer.style.transform = `translate3d(${percentage}%, 0, 0)`;
+        // console.log(`translate3d(${percentage}%, 0, 0)`);
+
     }
 
     /**
@@ -148,8 +272,9 @@ class Carrousel {
         translateX = (index * -100) / this.items.length;
 
         if (isAnimate === false) {
-            this.carrouselContainer.style.transition = 'none';
+            // this.carrouselContainer.style.transition = 'none';
             // debugger
+            this.disableTransition();
         }
 
         this.carrouselContainer.style.transform = `translate3d(${translateX}%, 0, 0)`;
@@ -159,7 +284,8 @@ class Carrousel {
 
 
         if (isAnimate === false) {
-            this.carrouselContainer.style.transition = '';
+            // this.carrouselContainer.style.transition = '';
+            this.enableTransition();
         }
 
         this.currentItem = index;
@@ -253,6 +379,20 @@ class Carrousel {
      */
     get slidesVisible() {
         return this.isMobile ? 1 : this.options.slidesVisible;
+    }
+
+    /**
+     * @returns {number} The width of the carrousel container in pixels.
+     */
+    get itemContainerWidth() {
+        return this.carrouselContainer.offsetWidth;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get carrouselWidth() {
+        return this.itemRoot.offsetWidth;
     }
 
     /**
