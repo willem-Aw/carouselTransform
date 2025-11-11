@@ -19,7 +19,7 @@ class CarrouselTouchManager {
 
         // prevent some default behaviors like text selection and image dragging
         carrousel.carrouselContainer.addEventListener('dragstart', (event) => {
-            event.preventDefault(); // Prevent default drag behavior
+            event.preventDefault();
         });
         carrousel.carrouselContainer.addEventListener('touchstart', (event) => { this.onTouchStart(event) });
         carrousel.carrouselContainer.addEventListener('mousedown', (event) => { this.onTouchStart(event) });
@@ -41,18 +41,18 @@ class CarrouselTouchManager {
      * Handles the touch move event to update the carrousel's position based on the swipe gesture.
      */
     onTouchStart(event) {
-        //e.preventDefault(); // Prevent default touch behavior (like scrolling)
+        //e.preventDefault();
         if (event.touches) {
             if (e.touches.length > 1) {
-                return; // Ignore multi-touch events
+                return;
             } else {
-                event = event.touches[0]; // Use the first touch point
+                event = event.touches[0];
             }
         }
-        this.origin = { x: event.screenX, y: event.screenY }; //to have the start point of the touch mobile event and mouse event
-        this.carrousel.disableTransition(); // Disable transition for smooth dragging
+        this.origin = { x: event.screenX, y: event.screenY }; 
+        this.carrousel.disableTransition(); 
         // console.log('Touch start:', this.origin.x);
-        this.carrouselWidth = this.carrousel.itemContainerWidth; // Get the width of the carrousel container
+        this.carrouselWidth = this.carrousel.itemContainerWidth; 
     }
 
     /**
@@ -61,8 +61,8 @@ class CarrouselTouchManager {
      */
     drag(e) {
         if (this.origin) {
-            this.carrousel.carrouselContainer.style.cursor = 'grabbing'; // Change cursor to indicate dragging
-            let point = e.touches ? e.touches[0] : e; // Use the first touch point for touch events
+            this.carrousel.carrouselContainer.style.cursor = 'grabbing'; 
+            let point = e.touches ? e.touches[0] : e; 
             let translate = { x: point.screenX - this.origin.x, y: point.screenY - this.origin.y };
 
             // prevent the vertical scrolling on mobile devices
@@ -73,9 +73,9 @@ class CarrouselTouchManager {
                 return;
             }
 
-            let translateBase = (this.carrousel.currentItem * -100) / this.carrousel.items.length; // Calculate the base translation based on the current item
-            this.lastTranslatePoint = translate; // Store the last translation point for reference
-            this.carrousel.translate(translateBase + 100 * translate.x / this.carrouselWidth); // Set initial position
+            let translateBase = (this.carrousel.currentItem * -100) / this.carrousel.items.length; 
+            this.lastTranslatePoint = translate; 
+            this.carrousel.translate(translateBase + 100 * translate.x / this.carrouselWidth); 
         }
     }
 
@@ -85,22 +85,22 @@ class CarrouselTouchManager {
      */
     endDrag(e) {
         if (this.origin && this.lastTranslatePoint) {
-            this.carrousel.enableTransition(); // Re-enable transition after dragging
+            this.carrousel.enableTransition(); 
 
             if (Math.abs(this.lastTranslatePoint.x / this.carrousel.carrouselWidth) > 0.2) {
                 // If the swipe distance is greater than 20% of the carrousel width, navigate to the next or previous item
                 if (this.lastTranslatePoint.x > 0) {
-                    this.carrousel.prev(); // Swipe right, go to previous item
+                    this.carrousel.prev(); 
                 } else {
-                    this.carrousel.next(); // Swipe left, go to next item
+                    this.carrousel.next(); 
                 }
             } else {
                 // If the swipe distance is less than 20% of the carrousel width, snap back to the current item
-                this.carrousel.gotoItem(this.carrousel.currentItem, false); // Snap back to the current item without animation
+                this.carrousel.gotoItem(this.carrousel.currentItem, false); 
             }
         }
-        this.origin = null; // Reset the origin point
-        this.carrousel.carrouselContainer.style.cursor = 'initial'; // Reset cursor style
+        this.origin = null;
+        this.carrousel.carrouselContainer.style.cursor = 'initial';
     }
 }
 
@@ -422,7 +422,6 @@ let contentHasBeenLoaded = function () {
     });
 }
 
-// prevent the script from running before the DOM is fully loaded because of the asynchronous nature of JavaScript
 if (document.readyState !== 'loading') {
     contentHasBeenLoaded();
 }
